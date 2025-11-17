@@ -347,7 +347,7 @@ export default function NetWorthEngine() {
                   {asset.name}
                 </label>
                 <input
-                  ref={(el) => (assetInputRefs.current[index] = el)}
+                  ref={(el) => { assetInputRefs.current[index] = el }}
                   type="text"
                   value={formatCurrencyInput(asset.value)}
                   onChange={(e) => handleAssetInputChange(index, e.target.value)}
@@ -392,7 +392,7 @@ export default function NetWorthEngine() {
                   {liability.name}
                 </label>
                 <input
-                  ref={(el) => (liabilityInputRefs.current[index] = el)}
+                  ref={(el) => { liabilityInputRefs.current[index] = el }}
                   type="text"
                   value={formatCurrencyInput(liability.value)}
                   onChange={(e) => handleLiabilityInputChange(index, e.target.value)}
