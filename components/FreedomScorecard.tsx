@@ -130,6 +130,16 @@ export default function FreedomScorecard() {
     setShowCelebration(false)
   }
 
+  const handleReset = () => {
+    setTargetLifestyle(0)
+    setPassiveIncome(0)
+    setActiveIncome(0)
+    setSavingsRate(15)
+    setGrowthRate(7)
+    setShowCelebration(false)
+    setHasReachedFreedom(false)
+  }
+
   return (
     <div className={`space-y-8 relative ${darkMode ? 'dark' : ''}`}>
       {/* Celebratory Modal */}
@@ -216,132 +226,150 @@ export default function FreedomScorecard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Inputs Section - Luxury Enhanced */}
-        <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
-          <h2 className="luxury-subheading text-2xl text-gray-800 dark:text-gray-200 mb-6">Your Inputs</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                Target Lifestyle Cost (p.a.)
-              </label>
-              <input
-                ref={targetLifestyleRef}
-                type="text"
-                value={formatCurrencyInput(targetLifestyle)}
-                onChange={(e) => setTargetLifestyle(parseCurrency(e.target.value))}
-                onKeyDown={(e) => handleKeyDown(e, 'targetLifestyle')}
-                className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
-              />
-              <input
-                type="range"
-                min="0"
-                max={1000000}
-                value={Math.min(targetLifestyle, 1000000)}
-                onChange={(e) => setTargetLifestyle(parseFloat(e.target.value))}
-                className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
-                style={{
-                  background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(targetLifestyle, 1000000) / 1000000) * 100}%, #e5e7eb ${(Math.min(targetLifestyle, 1000000) / 1000000) * 100}%, #e5e7eb 100%)`
-                }}
-              />
-              <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                {formatCurrency(targetLifestyle)}
+        {/* Left Column: Input Boxes Stacked */}
+        <div className="space-y-6">
+          {/* Box 1: Target Lifestyle, Target Passive Income, Growth Rate */}
+          <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="luxury-subheading text-2xl text-gray-800 dark:text-gray-200">Targets & Growth</h2>
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 premium-hover glass-card text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-800/90 border border-gray-300 dark:border-gray-600 hover:border-red-400 dark:hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
+                title="Reset all values to zero"
+              >
+                Reset All
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+                  Target Lifestyle Cost (p.a.)
+                </label>
+                <input
+                  ref={targetLifestyleRef}
+                  type="text"
+                  value={formatCurrencyInput(targetLifestyle)}
+                  onChange={(e) => setTargetLifestyle(parseCurrency(e.target.value))}
+                  onKeyDown={(e) => handleKeyDown(e, 'targetLifestyle')}
+                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max={500000}
+                  value={Math.min(targetLifestyle, 500000)}
+                  onChange={(e) => setTargetLifestyle(parseFloat(e.target.value))}
+                  className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
+                  style={{
+                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(targetLifestyle, 500000) / 500000) * 100}%, #e5e7eb ${(Math.min(targetLifestyle, 500000) / 500000) * 100}%, #e5e7eb 100%)`
+                  }}
+                />
+                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                  {formatCurrency(targetLifestyle)}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+                  Target Passive Income (p.a.)
+                </label>
+                <input
+                  ref={passiveIncomeRef}
+                  type="text"
+                  value={formatCurrencyInput(passiveIncome)}
+                  onChange={(e) => setPassiveIncome(parseCurrency(e.target.value))}
+                  onKeyDown={(e) => handleKeyDown(e, 'passiveIncome')}
+                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max={500000}
+                  value={Math.min(passiveIncome, 500000)}
+                  onChange={(e) => setPassiveIncome(parseFloat(e.target.value))}
+                  className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
+                  style={{
+                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(passiveIncome, 500000) / 500000) * 100}%, #e5e7eb ${(Math.min(passiveIncome, 500000) / 500000) * 100}%, #e5e7eb 100%)`
+                  }}
+                />
+                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                  {formatCurrency(passiveIncome)}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                  Growth Rate (p.a.): <span className="text-teal-600 dark:text-teal-400 text-lg">{growthRate}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="15"
+                  step="0.5"
+                  value={growthRate}
+                  onChange={(e) => setGrowthRate(parseFloat(e.target.value))}
+                  className="w-full h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                />
               </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                Target Passive Income (p.a.)
-              </label>
-              <input
-                ref={passiveIncomeRef}
-                type="text"
-                value={formatCurrencyInput(passiveIncome)}
-                onChange={(e) => setPassiveIncome(parseCurrency(e.target.value))}
-                onKeyDown={(e) => handleKeyDown(e, 'passiveIncome')}
-                className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
-              />
-              <input
-                type="range"
-                min="0"
-                max={1000000}
-                value={Math.min(passiveIncome, 1000000)}
-                onChange={(e) => setPassiveIncome(parseFloat(e.target.value))}
-                className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
-                style={{
-                  background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(passiveIncome, 1000000) / 1000000) * 100}%, #e5e7eb ${(Math.min(passiveIncome, 1000000) / 1000000) * 100}%, #e5e7eb 100%)`
-                }}
-              />
-              <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                {formatCurrency(passiveIncome)}
+          {/* Box 2: Active Income & Savings Rate */}
+          <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
+            <h2 className="luxury-subheading text-2xl text-gray-800 dark:text-gray-200 mb-6">Income & Savings</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+                  Active Income (optional)
+                </label>
+                <input
+                  ref={activeIncomeRef}
+                  type="text"
+                  value={formatCurrencyInput(activeIncome)}
+                  onChange={(e) => setActiveIncome(parseCurrency(e.target.value))}
+                  onKeyDown={(e) => handleKeyDown(e, 'activeIncome')}
+                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max={500000}
+                  value={Math.min(activeIncome, 500000)}
+                  onChange={(e) => setActiveIncome(parseFloat(e.target.value))}
+                  className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
+                  style={{
+                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(activeIncome, 500000) / 500000) * 100}%, #e5e7eb ${(Math.min(activeIncome, 500000) / 500000) * 100}%, #e5e7eb 100%)`
+                  }}
+                />
+                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                  {formatCurrency(activeIncome)}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                Active Income (optional)
-              </label>
-              <input
-                ref={activeIncomeRef}
-                type="text"
-                value={formatCurrencyInput(activeIncome)}
-                onChange={(e) => setActiveIncome(parseCurrency(e.target.value))}
-                onKeyDown={(e) => handleKeyDown(e, 'activeIncome')}
-                className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
-              />
-              <input
-                type="range"
-                min="0"
-                max={1000000}
-                value={Math.min(activeIncome, 1000000)}
-                onChange={(e) => setActiveIncome(parseFloat(e.target.value))}
-                className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
-                style={{
-                  background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(activeIncome, 1000000) / 1000000) * 100}%, #e5e7eb ${(Math.min(activeIncome, 1000000) / 1000000) * 100}%, #e5e7eb 100%)`
-                }}
-              />
-              <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                {formatCurrency(activeIncome)}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                  Savings Rate: <span className="text-teal-600 dark:text-teal-400 text-lg">{savingsRate}%</span>
+                </label>
+                <input
+                  ref={savingsRateSliderRef}
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={savingsRate}
+                  onChange={(e) => setSavingsRate(parseInt(e.target.value))}
+                  className="w-full h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                  tabIndex={0}
+                />
+                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                  Savings: {formatCurrency(activeIncome * (savingsRate / 100))} per year
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                Savings Rate: <span className="text-teal-600 dark:text-teal-400 text-lg">{savingsRate}%</span>
-              </label>
-              <input
-                ref={savingsRateSliderRef}
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={savingsRate}
-                onChange={(e) => setSavingsRate(parseInt(e.target.value))}
-                className="w-full h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                tabIndex={0}
-              />
-              <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                Savings: {formatCurrency(activeIncome * (savingsRate / 100))} per year
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                Growth Rate (p.a.): <span className="text-teal-600 dark:text-teal-400 text-lg">{growthRate}%</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="15"
-                step="0.5"
-                value={growthRate}
-                onChange={(e) => setGrowthRate(parseFloat(e.target.value))}
-                className="w-full h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
-              />
             </div>
           </div>
         </div>
 
-        {/* Projection Section - Luxury Enhanced */}
+        {/* Right Column: Projection Section */}
         <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
           <h2 className="luxury-subheading text-2xl mb-6 text-gray-800 dark:text-gray-200">Projection</h2>
           <ResponsiveContainer width="100%" height={350}>
@@ -406,10 +434,30 @@ export default function FreedomScorecard() {
 
           <div className="mt-6 p-6 glass-card embossed rounded-xl border-l-4 border-teal-500 relative overflow-hidden shadow-sm">
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-400/20 to-transparent rounded-full blur-2xl"></div>
-            <p className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 relative z-10">
-              At this rate, <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomPercentage}%</span> Freedom expected by{' '}
-              <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomDate}</span>.
-            </p>
+            <div className="mb-4 relative z-10">
+              {freedomPercentage >= 100 ? (
+                <div className="space-y-3">
+                  <p className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-50 mb-2 bg-gradient-to-r from-teal-600 via-green-500 to-teal-600 bg-clip-text text-transparent">
+                    🎉 Congratulations! 🎉
+                  </p>
+                  <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200 leading-relaxed">
+                    You reached <span className="luxury-heading text-3xl md:text-4xl text-teal-700 dark:text-teal-400 font-black">100%</span> lifestyle freedom in{' '}
+                    <span className="luxury-heading text-2xl md:text-3xl text-teal-700 dark:text-teal-400 font-black">{freedomDate}</span>.
+                  </p>
+                  <p className="text-xl md:text-2xl font-bold text-teal-700 dark:text-teal-400 mt-4">
+                    You are now <span className="text-2xl md:text-3xl font-black">financially independent</span>.
+                  </p>
+                  <p className="text-lg md:text-xl font-semibold text-gray-700 dark:text-gray-300 italic">
+                    Work is now optional! ✨
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                  You've reached <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomPercentage}%</span> lifestyle freedom so far, and you're on pace to hit full independence by{' '}
+                  <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomDate}</span>.
+                </p>
+              )}
+            </div>
             <div className="mt-6">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">

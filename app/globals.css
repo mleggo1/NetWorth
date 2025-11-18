@@ -21,14 +21,50 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Luxury leather texture background */
+/* Premium Rolls Royce Leather Texture Background */
 .luxury-leather-bg {
-  background-image: 
-    radial-gradient(circle at 20% 50%, rgba(139, 69, 19, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(101, 67, 33, 0.03) 0%, transparent 50%),
-    linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
-  background-size: 100% 100%, 100% 100%, 100% 100%;
+  /* Light Mode: Premium Tan/Beige Leather */
+  background: 
+    /* Base leather color - warm tan */
+    linear-gradient(135deg, #e8ddd4 0%, #d4c4b0 50%, #e8ddd4 100%),
+    /* Leather grain texture - horizontal */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139, 100, 70, 0.08) 1px,
+      rgba(139, 100, 70, 0.08) 2px,
+      transparent 2px,
+      transparent 3px,
+      rgba(101, 75, 50, 0.06) 3px,
+      rgba(101, 75, 50, 0.06) 4px
+    ),
+    /* Leather grain texture - vertical */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(120, 85, 60, 0.07) 2px,
+      rgba(120, 85, 60, 0.07) 4px,
+      transparent 4px,
+      transparent 6px,
+      rgba(139, 100, 70, 0.05) 6px,
+      rgba(139, 100, 70, 0.05) 8px
+    ),
+    /* Subtle highlights for depth */
+    radial-gradient(ellipse at 30% 20%, rgba(255, 245, 235, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(200, 180, 160, 0.3) 0%, transparent 50%),
+    /* Diagonal grain pattern */
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 15px,
+      rgba(139, 100, 70, 0.03) 15px,
+      rgba(139, 100, 70, 0.03) 16px
+    );
+  background-size: 100% 100%, 100% 100%, 100% 100%, 200% 200%, 200% 200%, 100% 100%;
   position: relative;
+  min-height: 100vh;
 }
 
 .luxury-leather-bg::before {
@@ -38,46 +74,165 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
+  /* Fine leather pores and texture */
   background-image: 
     repeating-linear-gradient(
       0deg,
       transparent,
-      transparent 2px,
-      rgba(139, 69, 19, 0.02) 2px,
-      rgba(139, 69, 19, 0.02) 4px
+      transparent 4px,
+      rgba(101, 75, 50, 0.04) 4px,
+      rgba(101, 75, 50, 0.04) 5px
     ),
     repeating-linear-gradient(
       90deg,
       transparent,
-      transparent 2px,
-      rgba(101, 67, 33, 0.02) 2px,
-      rgba(101, 67, 33, 0.02) 4px
-    );
+      transparent 3px,
+      rgba(120, 85, 60, 0.03) 3px,
+      rgba(120, 85, 60, 0.03) 4px
+    ),
+    /* Subtle embossed effect */
+    radial-gradient(circle at 25% 30%, rgba(255, 250, 240, 0.2) 0%, transparent 3%),
+    radial-gradient(circle at 75% 70%, rgba(200, 180, 160, 0.15) 0%, transparent 3%);
+  background-size: 100% 100%, 100% 100%, 500% 500%, 500% 500%;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.luxury-leather-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Premium sheen overlay */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
   pointer-events: none;
 }
 
+/* Dark Mode: Premium Dark Leather (Rolls Royce Style) - Enhanced Texture */
 .dark .luxury-leather-bg {
-  background-image: 
-    radial-gradient(circle at 20% 50%, rgba(139, 69, 19, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(101, 67, 33, 0.05) 0%, transparent 50%),
-    linear-gradient(135deg, #1a1625 0%, #0f0d15 100%);
-}
-
-.dark .luxury-leather-bg::before {
-  background-image: 
+  background: 
+    /* Base dark leather color - rich black/brown with more variation */
+    linear-gradient(135deg, #0a0806 0%, #1a1512 25%, #0f0c09 50%, #1a1512 75%, #0a0806 100%),
+    /* Prominent dark leather grain texture - horizontal (much more visible) */
     repeating-linear-gradient(
       0deg,
       transparent,
+      transparent 1px,
+      rgba(50, 35, 25, 0.35) 1px,
+      rgba(50, 35, 25, 0.35) 2px,
       transparent 2px,
-      rgba(139, 69, 19, 0.03) 2px,
-      rgba(139, 69, 19, 0.03) 4px
+      transparent 3px,
+      rgba(30, 20, 15, 0.28) 3px,
+      rgba(30, 20, 15, 0.28) 4px,
+      transparent 4px,
+      transparent 5px,
+      rgba(40, 28, 20, 0.25) 5px,
+      rgba(40, 28, 20, 0.25) 6px
     ),
+    /* Prominent dark leather grain texture - vertical (much more visible) */
     repeating-linear-gradient(
       90deg,
       transparent,
       transparent 2px,
-      rgba(101, 67, 33, 0.03) 2px,
-      rgba(101, 67, 33, 0.03) 4px
+      rgba(45, 32, 22, 0.32) 2px,
+      rgba(45, 32, 22, 0.32) 4px,
+      transparent 4px,
+      transparent 6px,
+      rgba(35, 25, 18, 0.30) 6px,
+      rgba(35, 25, 18, 0.30) 8px,
+      transparent 8px,
+      transparent 10px,
+      rgba(50, 35, 25, 0.25) 10px,
+      rgba(50, 35, 25, 0.25) 12px
+    ),
+    /* More pronounced highlights for premium depth */
+    radial-gradient(ellipse at 20% 20%, rgba(60, 45, 35, 0.6) 0%, transparent 35%),
+    radial-gradient(ellipse at 80% 80%, rgba(35, 25, 18, 0.5) 0%, transparent 35%),
+    radial-gradient(ellipse at 50% 50%, rgba(45, 32, 22, 0.3) 0%, transparent 50%),
+    /* More visible diagonal grain pattern */
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 12px,
+      rgba(40, 28, 20, 0.20) 12px,
+      rgba(40, 28, 20, 0.20) 13px,
+      transparent 13px,
+      transparent 14px,
+      rgba(50, 35, 25, 0.15) 14px,
+      rgba(50, 35, 25, 0.15) 15px
+    ),
+    /* Additional texture layer for depth */
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 18px,
+      rgba(35, 25, 18, 0.18) 18px,
+      rgba(35, 25, 18, 0.18) 19px
+    );
+  background-size: 100% 100%, 100% 100%, 100% 100%, 180% 180%, 180% 180%, 200% 200%, 100% 100%, 150% 150%;
+}
+
+.dark .luxury-leather-bg::before {
+  /* Much more visible dark leather pores and texture */
+  background-image: 
+    /* Fine horizontal grain - more visible */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(40, 28, 20, 0.25) 3px,
+      rgba(40, 28, 20, 0.25) 4px,
+      transparent 4px,
+      transparent 5px,
+      rgba(30, 20, 15, 0.20) 5px,
+      rgba(30, 20, 15, 0.20) 6px
+    ),
+    /* Fine vertical grain - more visible */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(45, 32, 22, 0.22) 2px,
+      rgba(45, 32, 22, 0.22) 3px,
+      transparent 3px,
+      transparent 4px,
+      rgba(35, 25, 18, 0.18) 4px,
+      rgba(35, 25, 18, 0.18) 5px
+    ),
+    /* More pronounced embossed effect for dark leather */
+    radial-gradient(circle at 25% 30%, rgba(70, 55, 45, 0.5) 0%, transparent 4%),
+    radial-gradient(circle at 75% 70%, rgba(45, 35, 28, 0.4) 0%, transparent 4%),
+    radial-gradient(circle at 50% 50%, rgba(55, 42, 32, 0.3) 0%, transparent 6%),
+    /* Additional texture spots */
+    radial-gradient(circle at 15% 60%, rgba(50, 38, 28, 0.25) 0%, transparent 3%),
+    radial-gradient(circle at 85% 40%, rgba(40, 30, 22, 0.25) 0%, transparent 3%);
+  background-size: 100% 100%, 100% 100%, 400% 400%, 400% 400%, 500% 500%, 600% 600%, 600% 600%;
+  opacity: 1;
+}
+
+.dark .luxury-leather-bg::after {
+  /* More visible premium dark leather sheen with depth */
+  background: 
+    linear-gradient(
+      135deg,
+      rgba(70, 55, 45, 0.25) 0%,
+      transparent 25%,
+      transparent 75%,
+      rgba(50, 38, 28, 0.2) 100%
+    ),
+    linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(60, 45, 35, 0.15) 50%,
+      transparent 100%
     );
 }
 

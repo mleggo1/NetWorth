@@ -48,7 +48,7 @@ export default function Home() {
 
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h1 className="luxury-heading text-4xl md:text-6xl font-black text-gray-900 dark:text-gray-50 mb-1 bg-gradient-to-r from-gray-900 via-teal-700 to-gray-900 dark:from-gray-50 dark:via-teal-400 dark:to-gray-50 bg-clip-text text-transparent drop-shadow-lg leading-tight pb-1">
+            <h1 className="luxury-heading text-4xl md:text-6xl font-black text-gray-900 dark:text-gray-50 mb-1 bg-gradient-to-r from-gray-900 via-teal-700 to-gray-900 dark:from-gray-50 dark:via-teal-400 dark:to-gray-50 bg-clip-text text-transparent drop-shadow-lg leading-[1.1] pb-2 overflow-visible">
               {activeTab === 'networth' ? 'Net Worth Engine' : 'Freedom Scorecard'}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 font-light text-sm mt-1">

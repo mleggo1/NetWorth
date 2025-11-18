@@ -126,6 +126,17 @@ export default function NetWorthEngine() {
     setLiabilities(updated)
   }
 
+  const handleReset = () => {
+    // Reset all assets to zero
+    setAssets(assets.map(asset => ({ ...asset, value: 0 })))
+    // Reset all liabilities to zero
+    setLiabilities(liabilities.map(liability => ({ ...liability, value: 0 })))
+    // Reset other values
+    setGrowthRate(6)
+    setHorizon(20)
+    setYearlyInvestment(0)
+  }
+
   const assetChartData = useMemo(() => {
     return assets.filter(a => a.value > 0).map(a => ({ name: a.name, value: a.value }))
   }, [assets])
@@ -177,130 +188,120 @@ export default function NetWorthEngine() {
     return renderCustomLabel(entry, 'liabilities')
   }
 
-  // Custom label renderer that wraps text with enhanced visibility
+  // Professional label renderer - labels centered on each slice
+  // Connector line from dead center of slice, label 2mm above line end
   const renderCustomLabel = (entry: any, chartType: 'assets' | 'liabilities' = 'assets') => {
-    const { cx, cy, name, percent } = entry
+    const { cx, cy, name, percent, midAngle, outerRadius } = entry
     const percentage = (percent * 100).toFixed(0)
-    
-    // Calculate position - move labels further away from chart
-    const { midAngle, outerRadius } = entry
     const RADIAN = Math.PI / 180
     
-    // Estimate container bounds (ResponsiveContainer height is 280)
-    // Use chart center and reasonable bounds
-    const estimatedWidth = cx * 2 // Chart is centered, so width is roughly 2x center X
-    const estimatedHeight = 280
-    const legendSpace = 70 // Space reserved for legend below
-    
-    // Calculate approximate text width (rough estimate: 8-10px per character)
-    const estimatedTextWidth = name.length * 9
-    const textPadding = Math.max(30, estimatedTextWidth / 2 + 10) // Extra padding for longer text
-    
-    // Check if label has multiple words (contains space or &)
-    const hasMultipleWords = name.includes(' ') || name.includes('&')
-    
-    // Adjust label distance - move multi-word labels further out to keep them outside the donut
-    const baseDistance = outerRadius + 60
-    const adjustedDistance = hasMultipleWords ? baseDistance + 30 : baseDistance
-    let labelX = cx + adjustedDistance * Math.cos(-midAngle * RADIAN)
-    let labelY = cy + adjustedDistance * Math.sin(-midAngle * RADIAN)
-    
-    // Constrain labels to visible area, avoiding legend and accounting for text width
-    const minX = textPadding
-    const maxX = estimatedWidth - textPadding
-    const minY = 25
-    const maxY = estimatedHeight - 25 - legendSpace
-    
-    // Determine text anchor based on position
-    const textAnchor = labelX > cx ? 'start' : 'end'
-    
-    // Adjust X position to account for text width to prevent cutoff
-    if (textAnchor === 'end') {
-      // Text extends left from labelX, so ensure we have enough space on the left
-      labelX = Math.max(minX + estimatedTextWidth / 2, labelX)
+    // Wrap specific names first
+    let labelLines: string[] = []
+    if (name === 'Stocks & ETFs') {
+      labelLines = ['Stocks &', `ETFs ${percentage}%`]
+    } else if (name === 'Personal Loans') {
+      labelLines = ['Personal', `Loans ${percentage}%`]
+    } else if (name === 'Margin Loan') {
+      labelLines = ['Margin', `Loan ${percentage}%`]
     } else {
-      // Text extends right from labelX, so ensure we have enough space on the right
-      labelX = Math.min(maxX - estimatedTextWidth / 2, labelX)
+      labelLines = [`${name} ${percentage}%`]
     }
     
-    // Clamp Y position to bounds
-    labelY = Math.max(minY, Math.min(maxY, labelY))
+    // Text dimensions
+    const fontSize = 11
+    const lineHeight = 13
+    const maxLineLength = Math.max(...labelLines.map(line => line.length))
+    const textWidth = maxLineLength * 6.5
+    const textHeight = labelLines.length * lineHeight
     
-    // Split long names into multiple lines - wrap only at word boundaries, never break words
-    const wrapText = (text: string, maxLength: number = 8) => {
-      if (text.length <= maxLength) return [text]
-      const words = text.split(' ')
-      const lines: string[] = []
-      let currentLine = ''
-      
-      words.forEach((word, index) => {
-        // Never break a word - keep whole words together
-        // If adding this word would exceed maxLength, start a new line
-        const wouldExceed = currentLine.length + (currentLine ? 1 : 0) + word.length > maxLength
-        
-        if (wouldExceed && currentLine) {
-          // Current line is full, push it and start new line with this word
-          lines.push(currentLine)
-          currentLine = word
-        } else {
-          // Add word to current line
-          currentLine += (currentLine ? ' ' : '') + word
-        }
-        
-        // Push the last line if we're at the end
-        if (index === words.length - 1 && currentLine) {
-          lines.push(currentLine)
-        }
-      })
-      
-      return lines.length > 0 ? lines : [text]
+    // Connector line extends from center of slice outward
+    // 2mm ≈ 8px at standard screen resolution
+    const connectorLineLength = 65 // Length of connector line from donut edge
+    const twoMmInPixels = 8 // 2mm separation above line end
+    
+    // Calculate connector line: starts at center of slice (midAngle), extends outward
+    // Use midAngle to ensure line comes from dead center of slice
+    // innerRadius is 40, outerRadius is 100, so center of ring is at 70
+    const innerRadius = 40
+    const ringCenter = (innerRadius + outerRadius) / 2 // Center of donut ring
+    const lineStartX = cx + ringCenter * Math.cos(-midAngle * RADIAN)
+    const lineStartY = cy + ringCenter * Math.sin(-midAngle * RADIAN)
+    
+    // Line extends outward along midAngle
+    const lineEndDistance = outerRadius + connectorLineLength
+    const lineEndX = cx + lineEndDistance * Math.cos(-midAngle * RADIAN)
+    const lineEndY = cy + lineEndDistance * Math.sin(-midAngle * RADIAN)
+    
+    // Label positioned 2mm above the end of the connector line, centered on the slice
+    // Text is always center-aligned relative to the slice center
+    const labelX = lineEndX // X position centered on line end
+    const labelY = lineEndY - twoMmInPixels // 2mm above line end
+    
+    // Chart boundaries for safety checks
+    const margin = 70
+    const chartWidth = cx * 2
+    const chartHeight = 280
+    const minX = margin
+    const maxX = chartWidth - margin
+    const minY = margin
+    const maxY = chartHeight - margin - 60
+    
+    // Adjust label position if it would be cut off, but keep it centered on slice
+    let finalLabelX = labelX
+    let finalLabelY = labelY
+    
+    // Ensure text doesn't go outside chart boundaries (centered alignment)
+    if (labelX - textWidth / 2 < minX) {
+      finalLabelX = minX + textWidth / 2
+    } else if (labelX + textWidth / 2 > maxX) {
+      finalLabelX = maxX - textWidth / 2
     }
     
-    // More aggressive wrapping for labels near edges or with long names
-    const isNearEdge = labelX < minX + 30 || labelX > maxX - 30 || labelY < minY + 30 || labelY > maxY - 30
-    const maxLineLength = isNearEdge ? 7 : (name.length > 15 ? 8 : 10)
-    const nameLines = wrapText(name, maxLineLength)
+    // Ensure text doesn't go outside vertical boundaries
+    const halfTextHeight = textHeight / 2
+    if (labelY - halfTextHeight < minY) {
+      finalLabelY = minY + halfTextHeight
+    } else if (labelY + halfTextHeight > maxY) {
+      finalLabelY = maxY - halfTextHeight
+    }
     
-    // Simple text colors - white in dark mode, dark in light mode, no shading
-    const textColor = darkMode ? '#FFFFFF' : '#000000'
-    
-    // Consistent font size for all text - clean and easy to read
-    const fontSize = 14
+    // Text styling
+    const textColor = darkMode ? '#FFFFFF' : '#1F2937'
+    const lineColor = darkMode ? '#000000' : '#000000' // Black line as requested
+    const fontWeight = 500
     
     return (
       <g>
+        {/* Draw connector line from center of slice outward */}
+        <line
+          x1={lineStartX}
+          y1={lineStartY}
+          x2={lineEndX}
+          y2={lineEndY}
+          stroke={lineColor}
+          strokeWidth={1.5}
+          fill="none"
+        />
+        {/* Label text - centered on slice, 2mm above line end */}
         <text
-          x={labelX}
-          y={labelY}
-          textAnchor={textAnchor}
-          dominantBaseline="central"
+          x={finalLabelX}
+          y={finalLabelY}
+          textAnchor="middle"
+          dominantBaseline="middle"
           fill={textColor}
           fontSize={fontSize}
-          fontWeight="400"
+          fontWeight={fontWeight}
         >
-          {nameLines.map((line: string, i: number) => (
-            <tspan 
-              key={i} 
-              x={labelX} 
-              y={labelY + (i - (nameLines.length - 1) / 2) * (fontSize + 2)} 
-              textAnchor={textAnchor}
-              fill={textColor}
-              fontSize={fontSize}
-              fontWeight="400"
+          {labelLines.map((line, index) => (
+            <tspan
+              key={index}
+              x={finalLabelX}
+              y={finalLabelY + (index - (labelLines.length - 1) / 2) * lineHeight}
+              textAnchor="middle"
             >
               {line}
             </tspan>
           ))}
-          <tspan 
-            x={labelX} 
-            y={labelY + (nameLines.length * (fontSize + 2) / 2) + 10} 
-            fontSize={fontSize} 
-            fill={textColor}
-            fontWeight="400"
-            textAnchor={textAnchor}
-          >
-            {percentage}%
-          </tspan>
         </text>
       </g>
     )
@@ -333,7 +334,16 @@ export default function NetWorthEngine() {
         </div>
       </div>
 
-      <h2 className="luxury-subheading text-2xl text-gray-800 dark:text-gray-200 mb-3 mt-4 relative z-10">Assets & Liabilities Overview</h2>
+      <div className="flex justify-between items-center mb-3 mt-4 relative z-10">
+        <h2 className="luxury-subheading text-2xl text-gray-800 dark:text-gray-200">Assets & Liabilities Overview</h2>
+        <button
+          onClick={handleReset}
+          className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 premium-hover glass-card text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-800/90 border border-gray-300 dark:border-gray-600 hover:border-red-400 dark:hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
+          title="Reset all values to zero"
+        >
+          Reset All
+        </button>
+      </div>
 
       {/* Assets and Liabilities Inputs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
@@ -365,8 +375,8 @@ export default function NetWorthEngine() {
                 <input
                   type="range"
                   min="0"
-                  max={Math.max(5000000, asset.value * 2)}
-                  value={asset.value}
+                  max={5000000}
+                  value={Math.min(asset.value, 5000000)}
                   onChange={(e) => {
                     const updated = [...assets]
                     updated[index].value = parseFloat(e.target.value)
@@ -374,7 +384,7 @@ export default function NetWorthEngine() {
                   }}
                   className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
                   style={{
-                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(asset.value / Math.max(5000000, asset.value * 2)) * 100}%, #e5e7eb ${(asset.value / Math.max(5000000, asset.value * 2)) * 100}%, #e5e7eb 100%)`
+                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(asset.value, 5000000) / 5000000) * 100}%, #e5e7eb ${(Math.min(asset.value, 5000000) / 5000000) * 100}%, #e5e7eb 100%)`
                   }}
                 />
               </div>
@@ -410,8 +420,8 @@ export default function NetWorthEngine() {
                 <input
                   type="range"
                   min="0"
-                  max={Math.max(2000000, liability.value * 2)}
-                  value={liability.value}
+                  max={5000000}
+                  value={Math.min(liability.value, 5000000)}
                   onChange={(e) => {
                     const updated = [...liabilities]
                     updated[index].value = parseFloat(e.target.value)
@@ -419,7 +429,7 @@ export default function NetWorthEngine() {
                   }}
                   className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer liability-slider"
                   style={{
-                    background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${(liability.value / Math.max(2000000, liability.value * 2)) * 100}%, #e5e7eb ${(liability.value / Math.max(2000000, liability.value * 2)) * 100}%, #e5e7eb 100%)`
+                    background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${(Math.min(liability.value, 5000000) / 5000000) * 100}%, #e5e7eb ${(Math.min(liability.value, 5000000) / 5000000) * 100}%, #e5e7eb 100%)`
                   }}
                 />
               </div>
@@ -436,42 +446,18 @@ export default function NetWorthEngine() {
           {assetChartData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <defs>
-                    <filter id="textShadow-light-assets" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
-                      <feOffset dx="1" dy="1" result="offsetblur"/>
-                      <feComponentTransfer>
-                        <feFuncA type="linear" slope="0.5"/>
-                      </feComponentTransfer>
-                      <feMerge>
-                        <feMergeNode/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                    <filter id="textShadow-dark-assets" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
-                      <feOffset dx="1" dy="1" result="offsetblur"/>
-                      <feComponentTransfer>
-                        <feFuncA type="linear" slope="0.5"/>
-                      </feComponentTransfer>
-                      <feMerge>
-                        <feMergeNode/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                  </defs>
+                <PieChart margin={{ top: 70, right: 70, bottom: 70, left: 70 }}>
                   <Pie
                     data={assetChartData}
                     cx="50%"
                     cy="50%"
-                    labelLine={{ stroke: darkMode ? '#cbd5e1' : '#4b5563', strokeWidth: darkMode ? 2.5 : 2 }}
-                    label={renderAssetLabel}
+                    labelLine={false}
+                    label={false}
                     outerRadius={100}
                     innerRadius={40}
                     fill="#8884d8"
                     dataKey="value"
-                    strokeWidth={3}
+                    strokeWidth={2.5}
                     stroke="#fff"
                   >
                     {assetChartData.map((entry, index) => (
@@ -502,17 +488,22 @@ export default function NetWorthEngine() {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="mt-6 flex flex-wrap gap-4 justify-center">
-                {assetChartData.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 glass-card px-4 py-2 rounded-lg premium-hover">
-                    <div
-                      className="w-4 h-4 rounded-full shadow-md"
-                      style={{ backgroundColor: VIBRANT_COLORS.assets[index % VIBRANT_COLORS.assets.length] }}
-                    />
-                    <span className="text-base font-bold text-gray-900 dark:text-gray-100 drop-shadow-sm">{item.name}</span>
-                    <span className="text-base font-extrabold text-teal-700 dark:text-teal-300 drop-shadow-sm">{formatCurrency(item.value)}</span>
-                  </div>
-                ))}
+              <div className="mt-10 flex flex-wrap gap-4 justify-center">
+                {assetChartData.map((item, index) => {
+                  const totalAssets = assetChartData.reduce((sum, a) => sum + a.value, 0)
+                  const percentage = totalAssets > 0 ? ((item.value / totalAssets) * 100).toFixed(0) : '0'
+                  return (
+                    <div key={index} className="flex items-center gap-3 glass-card px-4 py-2 rounded-lg premium-hover">
+                      <div
+                        className="w-4 h-4 rounded-full shadow-md"
+                        style={{ backgroundColor: VIBRANT_COLORS.assets[index % VIBRANT_COLORS.assets.length] }}
+                      />
+                      <span className="text-base font-bold text-gray-900 dark:text-gray-100 drop-shadow-sm">{item.name}</span>
+                      <span className="text-base font-extrabold text-teal-700 dark:text-teal-300 drop-shadow-sm">{formatCurrency(item.value)}</span>
+                      <span className="text-base font-semibold text-gray-600 dark:text-gray-400 drop-shadow-sm">({percentage}%)</span>
+                    </div>
+                  )
+                })}
               </div>
             </>
           ) : (
@@ -528,42 +519,18 @@ export default function NetWorthEngine() {
           {liabilityChartData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <defs>
-                    <filter id="textShadow-light-liabilities" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
-                      <feOffset dx="1" dy="1" result="offsetblur"/>
-                      <feComponentTransfer>
-                        <feFuncA type="linear" slope="0.5"/>
-                      </feComponentTransfer>
-                      <feMerge>
-                        <feMergeNode/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                    <filter id="textShadow-dark-liabilities" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
-                      <feOffset dx="1" dy="1" result="offsetblur"/>
-                      <feComponentTransfer>
-                        <feFuncA type="linear" slope="0.5"/>
-                      </feComponentTransfer>
-                      <feMerge>
-                        <feMergeNode/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                  </defs>
+                <PieChart margin={{ top: 70, right: 70, bottom: 70, left: 70 }}>
                   <Pie
                     data={liabilityChartData}
                     cx="50%"
                     cy="50%"
-                    labelLine={{ stroke: darkMode ? '#cbd5e1' : '#4b5563', strokeWidth: darkMode ? 2.5 : 2 }}
-                    label={renderLiabilityLabel}
+                    labelLine={false}
+                    label={false}
                     outerRadius={100}
                     innerRadius={40}
                     fill="#8884d8"
                     dataKey="value"
-                    strokeWidth={3}
+                    strokeWidth={2.5}
                     stroke="#fff"
                   >
                     {liabilityChartData.map((entry, index) => (
@@ -594,17 +561,22 @@ export default function NetWorthEngine() {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="mt-6 flex flex-wrap gap-4 justify-center">
-                {liabilityChartData.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 glass-card px-4 py-2 rounded-lg premium-hover">
-                    <div
-                      className="w-4 h-4 rounded-full shadow-md"
-                      style={{ backgroundColor: VIBRANT_COLORS.liabilities[index % VIBRANT_COLORS.liabilities.length] }}
-                    />
-                    <span className="text-base font-bold text-gray-900 dark:text-gray-100 drop-shadow-sm">{item.name}</span>
-                    <span className="text-base font-extrabold text-red-700 dark:text-red-300 drop-shadow-sm">{formatCurrency(item.value)}</span>
-                  </div>
-                ))}
+              <div className="mt-10 flex flex-wrap gap-4 justify-center">
+                {liabilityChartData.map((item, index) => {
+                  const totalLiabilities = liabilityChartData.reduce((sum, l) => sum + l.value, 0)
+                  const percentage = totalLiabilities > 0 ? ((item.value / totalLiabilities) * 100).toFixed(0) : '0'
+                  return (
+                    <div key={index} className="flex items-center gap-3 glass-card px-4 py-2 rounded-lg premium-hover">
+                      <div
+                        className="w-4 h-4 rounded-full shadow-md"
+                        style={{ backgroundColor: VIBRANT_COLORS.liabilities[index % VIBRANT_COLORS.liabilities.length] }}
+                      />
+                      <span className="text-base font-bold text-gray-900 dark:text-gray-100 drop-shadow-sm">{item.name}</span>
+                      <span className="text-base font-extrabold text-red-700 dark:text-red-300 drop-shadow-sm">{formatCurrency(item.value)}</span>
+                      <span className="text-base font-semibold text-gray-600 dark:text-gray-400 drop-shadow-sm">({percentage}%)</span>
+                    </div>
+                  )
+                })}
               </div>
             </>
           ) : (
