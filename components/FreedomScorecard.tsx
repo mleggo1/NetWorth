@@ -32,18 +32,19 @@ export default function FreedomScorecard() {
   const targetLifestyleRef = useRef<HTMLInputElement | null>(null)
   const passiveIncomeRef = useRef<HTMLInputElement | null>(null)
   const activeIncomeRef = useRef<HTMLInputElement | null>(null)
+  const growthRateRef = useRef<HTMLInputElement | null>(null)
   const savingsRateSliderRef = useRef<HTMLInputElement | null>(null)
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, field: 'targetLifestyle' | 'passiveIncome' | 'activeIncome') => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, field: 'targetLifestyle' | 'passiveIncome' | 'growthRate') => {
     if (e.key === 'Enter') {
       e.preventDefault()
       
       if (field === 'targetLifestyle') {
         passiveIncomeRef.current?.focus()
       } else if (field === 'passiveIncome') {
-        activeIncomeRef.current?.focus()
-      } else if (field === 'activeIncome') {
-        savingsRateSliderRef.current?.focus()
+        growthRateRef.current?.focus()
+      } else if (field === 'growthRate') {
+        // Focus moves to projection or stays on growth rate
       }
     }
   }
@@ -64,6 +65,17 @@ export default function FreedomScorecard() {
 
   const formatCurrencyInput = (value: number): string => {
     return formatCurrency(value)
+  }
+
+  const formatPercentageInput = (value: number): string => {
+    if (value === 0) return ''
+    return `${value}%`
+  }
+
+  const parsePercentage = (value: string): number => {
+    // Remove % and non-digit characters except decimal point
+    const cleaned = value.replace(/[^\d.]/g, '')
+    return parseFloat(cleaned) || 0
   }
 
   const projectionData = useMemo(() => {
@@ -298,9 +310,23 @@ export default function FreedomScorecard() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                  Growth Rate (p.a.): <span className="text-teal-600 dark:text-teal-400 text-lg">{growthRate}%</span>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+                  Growth Rate % (P.A.)
                 </label>
+                <input
+                  ref={growthRateRef}
+                  type="text"
+                  value={formatPercentageInput(growthRate)}
+                  onChange={(e) => setGrowthRate(parsePercentage(e.target.value))}
+                  onKeyDown={(e) => handleKeyDown(e, 'growthRate')}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      setGrowthRate(0)
+                    }
+                  }}
+                  placeholder="0%"
+                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
+                />
                 <input
                   type="range"
                   min="0"
@@ -308,62 +334,8 @@ export default function FreedomScorecard() {
                   step="0.5"
                   value={growthRate}
                   onChange={(e) => setGrowthRate(parseFloat(e.target.value))}
-                  className="w-full h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                  className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
                 />
-              </div>
-            </div>
-          </div>
-
-          {/* Box 2: Active Income & Savings Rate */}
-          <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
-            <h2 className="luxury-subheading text-2xl text-gray-800 dark:text-gray-200 mb-6">Income & Savings</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                  Active Income (optional)
-                </label>
-                <input
-                  ref={activeIncomeRef}
-                  type="text"
-                  value={formatCurrencyInput(activeIncome)}
-                  onChange={(e) => setActiveIncome(parseCurrency(e.target.value))}
-                  onKeyDown={(e) => handleKeyDown(e, 'activeIncome')}
-                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max={500000}
-                  value={Math.min(activeIncome, 500000)}
-                  onChange={(e) => setActiveIncome(parseFloat(e.target.value))}
-                  className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
-                  style={{
-                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(activeIncome, 500000) / 500000) * 100}%, #e5e7eb ${(Math.min(activeIncome, 500000) / 500000) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
-                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                  {formatCurrency(activeIncome)}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                  Savings Rate: <span className="text-teal-600 dark:text-teal-400 text-lg">{savingsRate}%</span>
-                </label>
-                <input
-                  ref={savingsRateSliderRef}
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={savingsRate}
-                  onChange={(e) => setSavingsRate(parseInt(e.target.value))}
-                  className="w-full h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                  tabIndex={0}
-                />
-                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                  Savings: {formatCurrency(activeIncome * (savingsRate / 100))} per year
-                </div>
               </div>
             </div>
           </div>
@@ -372,108 +344,121 @@ export default function FreedomScorecard() {
         {/* Right Column: Projection Section */}
         <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
           <h2 className="luxury-subheading text-2xl mb-6 text-gray-800 dark:text-gray-200">Projection</h2>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={500}>
             <AreaChart data={projectionData}>
               <defs>
                 <linearGradient id="colorLifestyle" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                  <stop offset="5%" stopColor="#dc2626" stopOpacity={0.5}/>
+                  <stop offset="50%" stopColor="#ef4444" stopOpacity={0.3}/>
                   <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="colorPassive" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                  <stop offset="5%" stopColor="#059669" stopOpacity={0.6}/>
+                  <stop offset="50%" stopColor="#10b981" stopOpacity={0.4}/>
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#475569' : '#cbd5e1'} strokeWidth={1.5} opacity={0.7} />
               <XAxis
                 dataKey="year"
-                stroke="#6b7280"
-                tick={{ fill: darkMode ? '#cbd5e1' : '#4b5563', fontWeight: 'bold' }}
-                style={{ fontSize: '12px' }}
+                stroke={darkMode ? '#94a3b8' : '#64748b'}
+                strokeWidth={2}
+                tick={{ fill: darkMode ? '#e2e8f0' : '#1e293b', fontWeight: 'bold', fontSize: '14px' }}
+                style={{ fontSize: '14px', fontWeight: 'bold' }}
               />
               <YAxis
-                stroke="#6b7280"
-                tick={{ fill: darkMode ? '#cbd5e1' : '#4b5563', fontWeight: 'bold' }}
+                stroke={darkMode ? '#94a3b8' : '#64748b'}
+                strokeWidth={2}
+                tick={{ fill: darkMode ? '#e2e8f0' : '#1e293b', fontWeight: 'bold', fontSize: '14px' }}
                 tickFormatter={(value) => `$${value / 1000}k`}
-                style={{ fontSize: '12px' }}
+                style={{ fontSize: '14px', fontWeight: 'bold' }}
               />
               <Tooltip
                 formatter={(value: number) => formatCurrency(value)}
                 contentStyle={{
                   backgroundColor: darkMode ? '#1e293b' : '#fff',
-                  border: `2px solid ${darkMode ? '#334155' : '#e5e7eb'}`,
+                  border: `3px solid ${darkMode ? '#475569' : '#cbd5e1'}`,
                   borderRadius: '12px',
-                  fontSize: '14px',
+                  fontSize: '16px',
                   fontWeight: 'bold',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
                 }}
               />
               <Legend 
-                wrapperStyle={{ fontWeight: 'bold', fontSize: '14px' }}
+                wrapperStyle={{ fontWeight: 'bold', fontSize: '16px', paddingTop: '20px' }}
+                iconType="square"
               />
               <Area
                 type="monotone"
                 dataKey="lifestyle"
-                stroke="#ef4444"
-                strokeWidth={3}
-                strokeDasharray="5 5"
+                stroke="#dc2626"
+                strokeWidth={5}
+                strokeDasharray="8 4"
                 fillOpacity={1}
                 fill="url(#colorLifestyle)"
                 name="Lifestyle"
+                dot={false}
+                activeDot={{ r: 6, strokeWidth: 2, stroke: '#dc2626' }}
               />
               <Area
                 type="monotone"
                 dataKey="passive"
-                stroke="#10b981"
-                strokeWidth={4}
+                stroke="#059669"
+                strokeWidth={6}
                 fillOpacity={1}
                 fill="url(#colorPassive)"
                 name="Passive"
+                dot={false}
+                activeDot={{ r: 7, strokeWidth: 2, stroke: '#059669' }}
               />
             </AreaChart>
           </ResponsiveContainer>
 
-          <div className="mt-6 p-6 glass-card embossed rounded-xl border-l-4 border-teal-500 relative overflow-hidden shadow-sm">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-400/20 to-transparent rounded-full blur-2xl"></div>
-            <div className="mb-4 relative z-10">
-              {freedomPercentage >= 100 ? (
-                <div className="space-y-3">
-                  <p className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-50 mb-2 bg-gradient-to-r from-teal-600 via-green-500 to-teal-600 bg-clip-text text-transparent">
-                    🎉 Congratulations! 🎉
+          {/* Only show progress box when there's actual data */}
+          {(targetLifestyle > 0 || passiveIncome > 0 || activeIncome > 0) && (
+            <div className="mt-6 p-6 glass-card embossed rounded-xl border-l-4 border-teal-500 relative overflow-hidden shadow-sm">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-400/20 to-transparent rounded-full blur-2xl"></div>
+              <div className="mb-4 relative z-10">
+                {freedomPercentage >= 100 ? (
+                  <div className="space-y-3">
+                    <p className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-50 mb-2 bg-gradient-to-r from-teal-600 via-green-500 to-teal-600 bg-clip-text text-transparent">
+                      🎉 Congratulations! 🎉
+                    </p>
+                    <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200 leading-relaxed">
+                      You reached <span className="luxury-heading text-3xl md:text-4xl text-teal-700 dark:text-teal-400 font-black">100%</span> lifestyle freedom in{' '}
+                      <span className="luxury-heading text-2xl md:text-3xl text-teal-700 dark:text-teal-400 font-black">{freedomDate}</span>.
+                    </p>
+                    <p className="text-xl md:text-2xl font-bold text-teal-700 dark:text-teal-400 mt-4">
+                      You are now <span className="text-2xl md:text-3xl font-black">financially independent</span>.
+                    </p>
+                    <p className="text-lg md:text-xl font-semibold text-gray-700 dark:text-gray-300 italic">
+                      Work is now optional! ✨
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                    You've reached <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomPercentage}%</span> lifestyle freedom so far, and you're on pace to hit full independence by{' '}
+                    <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomDate}</span>.
                   </p>
-                  <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200 leading-relaxed">
-                    You reached <span className="luxury-heading text-3xl md:text-4xl text-teal-700 dark:text-teal-400 font-black">100%</span> lifestyle freedom in{' '}
-                    <span className="luxury-heading text-2xl md:text-3xl text-teal-700 dark:text-teal-400 font-black">{freedomDate}</span>.
-                  </p>
-                  <p className="text-xl md:text-2xl font-bold text-teal-700 dark:text-teal-400 mt-4">
-                    You are now <span className="text-2xl md:text-3xl font-black">financially independent</span>.
-                  </p>
-                  <p className="text-lg md:text-xl font-semibold text-gray-700 dark:text-gray-300 italic">
-                    Work is now optional! ✨
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                  You've reached <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomPercentage}%</span> lifestyle freedom so far, and you're on pace to hit full independence by{' '}
-                  <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomDate}</span>.
-                </p>
-              )}
-            </div>
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-teal-600 rounded-full shadow-lg" />
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Current Progress</span>
-                </div>
-                <span className="text-lg font-bold text-teal-600 dark:text-teal-400">{freedomPercentage}%</span>
+                )}
               </div>
-              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-4 shadow-inner">
-                <div
-                  className="bg-gradient-to-r from-teal-500 to-teal-600 h-4 rounded-full transition-all duration-500 shadow-lg"
-                  style={{ width: `${Math.min(100, freedomPercentage)}%` }}
-                />
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-teal-600 rounded-full shadow-lg" />
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Current Progress</span>
+                  </div>
+                  <span className="text-lg font-bold text-teal-600 dark:text-teal-400">{freedomPercentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-4 shadow-inner">
+                  <div
+                    className="bg-gradient-to-r from-teal-500 to-teal-600 h-4 rounded-full transition-all duration-500 shadow-lg"
+                    style={{ width: `${Math.min(100, freedomPercentage)}%` }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
