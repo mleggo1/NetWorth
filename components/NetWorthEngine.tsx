@@ -42,14 +42,14 @@ export default function NetWorthEngine() {
     return () => observer.disconnect()
   }, [])
   const [assets, setAssets] = useState<Asset[]>([
-    { name: 'Cash', value: 1421000 },
-    { name: 'Stocks & ETFs', value: 1091000 },
+    { name: 'Cash', value: 0 },
+    { name: 'Stocks & ETFs', value: 0 },
     { name: 'Property', value: 0 },
     { name: 'Super', value: 0 },
     { name: 'Other', value: 0 },
   ])
   const [liabilities, setLiabilities] = useState<Liability[]>([
-    { name: 'Mortgage', value: 607000 },
+    { name: 'Mortgage', value: 0 },
     { name: 'Credit Card', value: 0 },
     { name: 'Personal Loans', value: 0 },
     { name: 'Margin Loan', value: 0 },
@@ -317,20 +317,50 @@ export default function NetWorthEngine() {
         </>
       )}
       
-      {/* Summary Cards - Luxury Enhanced */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
-        <div className="glass-card embossed rounded-xl p-5 premium-hover border-l-4 border-blue-500 shadow-sm">
-          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">ASSETS</h3>
-          <p className="luxury-heading text-4xl text-teal-700 dark:text-teal-400">{formatCurrency(totalAssets)}</p>
-        </div>
-        <div className="glass-card embossed rounded-xl p-5 premium-hover border-l-4 border-red-500 shadow-sm">
-          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">LIABILITIES</h3>
-          <p className="luxury-heading text-4xl text-teal-700 dark:text-teal-400">{formatCurrency(totalLiabilities)}</p>
-        </div>
-        <div className="glass-card embossed rounded-xl p-5 premium-hover border-l-4 border-teal-500 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-teal-400/20 to-transparent rounded-full blur-2xl"></div>
-          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 relative z-10">NET WORTH</h3>
-          <p className="luxury-heading text-4xl text-teal-700 dark:text-teal-400 relative z-10">{formatCurrency(netWorth)}</p>
+      {/* Net Worth, Assets & Liabilities - Compact Combined Card */}
+      <div className="relative z-10 mb-6">
+        <div className="glass-card embossed rounded-2xl p-6 md:p-8 premium-hover relative overflow-hidden border-2 border-teal-500/30 dark:border-teal-400/30 shadow-2xl shadow-teal-500/20 dark:shadow-teal-400/20">
+          {/* Premium gradient overlays */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-teal-400/30 via-teal-500/20 to-transparent rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-teal-400/20 via-teal-500/10 to-transparent rounded-full blur-3xl"></div>
+          
+          {/* Subtle pattern overlay */}
+          <div className="absolute inset-0 opacity-5 dark:opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)',
+              backgroundSize: '24px 24px'
+            }}></div>
+          </div>
+          
+          <div className="relative z-10">
+            {/* Net Worth - Top Section */}
+            <div className="text-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-2">NET WORTH</h3>
+              {netWorth < 0 ? (
+                <p className="luxury-heading text-5xl md:text-6xl lg:text-7xl font-black text-red-700 dark:text-red-400 drop-shadow-2xl leading-normal py-2 px-4">
+                  {formatCurrency(netWorth)}
+                </p>
+              ) : (
+                <p className="luxury-heading text-5xl md:text-6xl lg:text-7xl font-black text-teal-700 dark:text-teal-300 bg-gradient-to-r from-teal-700 via-teal-600 to-teal-700 dark:from-teal-300 dark:via-teal-400 dark:to-teal-300 bg-clip-text text-transparent drop-shadow-2xl leading-normal py-2 px-4">
+                  {formatCurrency(netWorth)}
+                </p>
+              )}
+            </div>
+            
+            {/* Assets & Liabilities - Bottom Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative overflow-hidden rounded-lg p-4 bg-blue-50/50 dark:bg-blue-900/10 border-l-4 border-blue-500">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full blur-2xl"></div>
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 relative z-10">ASSETS</h3>
+                <p className="luxury-heading text-3xl md:text-4xl text-teal-700 dark:text-teal-400 font-black relative z-10">{formatCurrency(totalAssets)}</p>
+              </div>
+              <div className="relative overflow-hidden rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10 border-l-4 border-red-500">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-400/20 to-transparent rounded-full blur-2xl"></div>
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 relative z-10">LIABILITIES</h3>
+                <p className="luxury-heading text-3xl md:text-4xl text-red-700 dark:text-red-400 font-black relative z-10">{formatCurrency(totalLiabilities)}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -351,44 +381,53 @@ export default function NetWorthEngine() {
         <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
           <h3 className="luxury-subheading text-2xl mb-6 text-gray-800 dark:text-gray-200">Assets — High Level</h3>
           <div className="space-y-4">
-            {assets.map((asset, index) => (
-              <div key={index}>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                  {asset.name}
-                </label>
-                <input
-                  ref={(el) => { assetInputRefs.current[index] = el }}
-                  type="text"
-                  value={formatCurrencyInput(asset.value)}
-                  onChange={(e) => handleAssetInputChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, 'asset', index)}
-                  onBlur={(e) => {
-                    if (e.target.value === '') {
+            {assets.map((asset, index) => {
+              // Cash slider has max of 1,000,000, Property has 10,000,000, others have 5,000,000
+              const isCash = asset.name === 'Cash'
+              const isProperty = asset.name === 'Property'
+              const sliderMax = isCash ? 1000000 : isProperty ? 10000000 : 5000000
+              const sliderValue = Math.min(asset.value, sliderMax)
+              const sliderPercentage = (sliderValue / sliderMax) * 100
+              
+              return (
+                <div key={index}>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+                    {asset.name}
+                  </label>
+                  <input
+                    ref={(el) => { assetInputRefs.current[index] = el }}
+                    type="text"
+                    value={formatCurrencyInput(asset.value)}
+                    onChange={(e) => handleAssetInputChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, 'asset', index)}
+                    onBlur={(e) => {
+                      if (e.target.value === '') {
+                        const updated = [...assets]
+                        updated[index].value = 0
+                        setAssets(updated)
+                      }
+                    }}
+                    placeholder="$0"
+                    className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max={sliderMax}
+                    value={sliderValue}
+                    onChange={(e) => {
                       const updated = [...assets]
-                      updated[index].value = 0
+                      updated[index].value = parseFloat(e.target.value)
                       setAssets(updated)
-                    }
-                  }}
-                  placeholder="$0"
-                  className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max={5000000}
-                  value={Math.min(asset.value, 5000000)}
-                  onChange={(e) => {
-                    const updated = [...assets]
-                    updated[index].value = parseFloat(e.target.value)
-                    setAssets(updated)
-                  }}
-                  className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
-                  style={{
-                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(asset.value, 5000000) / 5000000) * 100}%, #e5e7eb ${(Math.min(asset.value, 5000000) / 5000000) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
-              </div>
-            ))}
+                    }}
+                    className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
+                    style={{
+                      background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${sliderPercentage}%, #e5e7eb ${sliderPercentage}%, #e5e7eb 100%)`
+                    }}
+                  />
+                </div>
+              )
+            })}
           </div>
         </div>
 
