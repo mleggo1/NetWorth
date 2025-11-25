@@ -83,7 +83,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
           
           <button
             onClick={handleLogin}
-            className="w-full px-6 py-3 rounded-lg text-base font-bold transition-all duration-300 premium-hover glass-card text-white bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50"
+            className="w-full px-6 py-4 rounded-xl text-lg font-bold text-white bg-gradient-to-b from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 transform hover:scale-[1.02] active:scale-[0.98]"
           >
             Log in
           </button>
