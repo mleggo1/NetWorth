@@ -1,19 +1,30 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts'
+import { Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts'
+
+type ProjectionPoint = {
+  year: number
+  passiveIncome: number
+  lifestyleCost: number
+}
+
+const SLIDER_MAX_CURRENCY = 500000
+const SLIDER_MAX_PERCENTAGE = 15
+const PROJECTION_YEARS = 20
 
 export default function FreedomScorecard() {
   const [darkMode, setDarkMode] = useState(false)
-  const [targetLifestyle, setTargetLifestyle] = useState(0)
-  
+  const [lifestyleCost, setLifestyleCost] = useState(0)
+  const [currentPassiveIncome, setCurrentPassiveIncome] = useState(0)
+  const [growthRate, setGrowthRate] = useState(7)
+
   // Sync dark mode with document
   useEffect(() => {
     const checkDarkMode = () => {
       setDarkMode(document.documentElement.classList.contains('dark'))
     }
     checkDarkMode()
-    // Watch for changes
     const observer = new MutationObserver(checkDarkMode)
     observer.observe(document.documentElement, {
       attributes: true,
@@ -21,226 +32,148 @@ export default function FreedomScorecard() {
     })
     return () => observer.disconnect()
   }, [])
-  const [passiveIncome, setPassiveIncome] = useState(0)
-  const [activeIncome, setActiveIncome] = useState(0)
-  const [savingsRate, setSavingsRate] = useState(15)
-  const [growthRate, setGrowthRate] = useState(7)
-  const [showCelebration, setShowCelebration] = useState(false)
-  const [hasReachedFreedom, setHasReachedFreedom] = useState(false)
 
-  // Refs for input fields and slider
-  const targetLifestyleRef = useRef<HTMLInputElement | null>(null)
-  const passiveIncomeRef = useRef<HTMLInputElement | null>(null)
-  const activeIncomeRef = useRef<HTMLInputElement | null>(null)
+  // Refs for input fields
+  const lifestyleCostRef = useRef<HTMLInputElement | null>(null)
+  const currentPassiveIncomeRef = useRef<HTMLInputElement | null>(null)
   const growthRateRef = useRef<HTMLInputElement | null>(null)
-  const savingsRateSliderRef = useRef<HTMLInputElement | null>(null)
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, field: 'targetLifestyle' | 'passiveIncome' | 'growthRate') => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      
-      if (field === 'targetLifestyle') {
-        passiveIncomeRef.current?.focus()
-      } else if (field === 'passiveIncome') {
-        growthRateRef.current?.focus()
-      } else if (field === 'growthRate') {
-        // Focus moves to projection or stays on growth rate
-      }
-    }
-  }
-
-  const formatCurrency = (value: number) => {
+  // Helper: Format currency with thousands separators
+  const formatCurrency = (value: number): string => {
+    if (!isFinite(value) || isNaN(value)) return '$0'
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value)
+    }).format(Math.max(0, value))
   }
 
+  // Helper: Parse currency input
   const parseCurrency = (value: string): number => {
     const cleaned = value.replace(/[^\d.]/g, '')
-    return parseFloat(cleaned) || 0
+    const parsed = parseFloat(cleaned)
+    return isFinite(parsed) && !isNaN(parsed) ? Math.max(0, parsed) : 0
   }
 
+  // Helper: Format currency for input field
   const formatCurrencyInput = (value: number): string => {
+    if (value === 0 || !isFinite(value) || isNaN(value)) return ''
     return formatCurrency(value)
   }
 
+  // Helper: Format percentage for input field
   const formatPercentageInput = (value: number): string => {
-    if (value === 0) return ''
+    if (value === 0 || !isFinite(value) || isNaN(value)) return ''
     return `${value}%`
   }
 
+  // Helper: Parse percentage input
   const parsePercentage = (value: string): number => {
-    // Remove % and non-digit characters except decimal point
     const cleaned = value.replace(/[^\d.]/g, '')
-    return parseFloat(cleaned) || 0
+    const parsed = parseFloat(cleaned)
+    return isFinite(parsed) && !isNaN(parsed) ? Math.max(0, Math.min(100, parsed)) : 0
   }
 
-  const projectionData = useMemo(() => {
-    const data = []
-    const currentYear = new Date().getFullYear()
-    const yearsToProject = 20
+  // Helper: Clamp value for slider
+  const clampSliderValue = (value: number, max: number): number => {
+    return Math.max(0, Math.min(max, isFinite(value) && !isNaN(value) ? value : 0))
+  }
 
-    let currentPassive = passiveIncome
-    let currentSavings = activeIncome * (savingsRate / 100)
-
-    for (let year = 0; year <= yearsToProject; year++) {
-      const yearLabel = currentYear + year
-      data.push({
-        year: yearLabel,
-        lifestyle: targetLifestyle,
-        passive: currentPassive,
-      })
-
-      // Project passive income growth
-      currentPassive = currentPassive * (1 + growthRate / 100)
-    }
-
-    return data
-  }, [targetLifestyle, passiveIncome, activeIncome, savingsRate, growthRate])
-
-  const freedomDate = useMemo(() => {
-    const currentYear = new Date().getFullYear()
-    let currentPassive = passiveIncome
-
-    for (let year = 0; year <= 50; year++) {
-      if (currentPassive >= targetLifestyle) {
-        const date = new Date(currentYear + year, 10, 1) // November
-        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, field: 'lifestyleCost' | 'currentPassiveIncome' | 'growthRate') => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      
+      if (field === 'lifestyleCost') {
+        currentPassiveIncomeRef.current?.focus()
+      } else if (field === 'currentPassiveIncome') {
+        growthRateRef.current?.focus()
       }
-      currentPassive = currentPassive * (1 + growthRate / 100)
     }
+  }
 
-    return 'Beyond 50 years'
-  }, [targetLifestyle, passiveIncome, growthRate])
-
+  // Calculate Freedom Percentage (clamped at 300%, handles edge cases)
   const freedomPercentage = useMemo(() => {
-    if (passiveIncome >= targetLifestyle) return 100
-    return Math.min(100, Math.round((passiveIncome / targetLifestyle) * 100))
-  }, [passiveIncome, targetLifestyle])
+    if (lifestyleCost === 0 || !isFinite(lifestyleCost) || isNaN(lifestyleCost)) return 0
+    if (!isFinite(currentPassiveIncome) || isNaN(currentPassiveIncome)) return 0
+    
+    const percentage = (currentPassiveIncome / lifestyleCost) * 100
+    return Math.min(Math.round(isFinite(percentage) ? percentage : 0), 300)
+  }, [currentPassiveIncome, lifestyleCost])
 
-  // Check if financial freedom is reached
-  useEffect(() => {
-    if (passiveIncome >= targetLifestyle && targetLifestyle > 0) {
-      if (!hasReachedFreedom) {
-        setHasReachedFreedom(true)
-        setShowCelebration(true)
+  // Generate projection data
+  const projections = useMemo((): ProjectionPoint[] => {
+    const startYear = new Date().getFullYear()
+    const safePassiveIncome = isFinite(currentPassiveIncome) && !isNaN(currentPassiveIncome) ? Math.max(0, currentPassiveIncome) : 0
+    const safeLifestyleCost = isFinite(lifestyleCost) && !isNaN(lifestyleCost) ? Math.max(0, lifestyleCost) : 0
+    const safeGrowthRate = isFinite(growthRate) && !isNaN(growthRate) ? Math.max(0, growthRate) : 0
+
+    return Array.from({ length: PROJECTION_YEARS }, (_, i) => {
+      const year = startYear + i
+      const growthMultiplier = Math.pow(1 + safeGrowthRate / 100, i)
+      const passiveIncome = safePassiveIncome * (isFinite(growthMultiplier) ? growthMultiplier : 1)
+      
+      return {
+        year,
+        passiveIncome: isFinite(passiveIncome) ? Math.max(0, passiveIncome) : 0,
+        lifestyleCost: safeLifestyleCost,
       }
-    } else {
-      setHasReachedFreedom(false)
+    })
+  }, [currentPassiveIncome, lifestyleCost, growthRate])
+
+  // Find independence year
+  const independencePoint = useMemo(() => {
+    return projections.find(p => p.passiveIncome >= p.lifestyleCost && p.lifestyleCost > 0)
+  }, [projections])
+
+  const independenceYear = useMemo(() => {
+    if (independencePoint) {
+      return independencePoint.year
     }
-  }, [passiveIncome, targetLifestyle, hasReachedFreedom])
+    return null
+  }, [independencePoint])
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-    document.documentElement.classList.toggle('dark')
-  }
+  // Chart data format for Recharts
+  const projectionData = useMemo(() => {
+    return projections.map(p => ({
+      year: p.year,
+      lifestyle: p.lifestyleCost,
+      passive: p.passiveIncome,
+    }))
+  }, [projections])
 
-  const closeCelebration = () => {
-    setShowCelebration(false)
-  }
-
+  // Handle reset
   const handleReset = () => {
-    setTargetLifestyle(0)
-    setPassiveIncome(0)
-    setActiveIncome(0)
-    setSavingsRate(15)
+    setLifestyleCost(0)
+    setCurrentPassiveIncome(0)
     setGrowthRate(7)
-    setShowCelebration(false)
-    setHasReachedFreedom(false)
   }
+
+  // Handle input changes with validation
+  const handleLifestyleCostChange = (value: string) => {
+    const parsed = parseCurrency(value)
+    setLifestyleCost(clampSliderValue(parsed, SLIDER_MAX_CURRENCY * 10)) // Allow higher input than slider max
+  }
+
+  const handlePassiveIncomeChange = (value: string) => {
+    const parsed = parseCurrency(value)
+    setCurrentPassiveIncome(clampSliderValue(parsed, SLIDER_MAX_CURRENCY * 10))
+  }
+
+  const handleGrowthRateChange = (value: string) => {
+    const parsed = parsePercentage(value)
+    setGrowthRate(clampSliderValue(parsed, SLIDER_MAX_PERCENTAGE))
+  }
+
+  // Check if we have valid data to show
+  const hasValidData = lifestyleCost > 0 || currentPassiveIncome > 0
 
   return (
     <div className={`space-y-8 relative ${darkMode ? 'dark' : ''}`}>
-      {/* Celebratory Modal */}
-      {showCelebration && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={closeCelebration}
-          ></div>
-          
-          {/* Modal Content */}
-          <div className="relative z-50 w-full max-w-2xl glass-card embossed rounded-3xl p-12 transform animate-scale-in">
-            {/* Confetti Effect Background */}
-            <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-              <div className="absolute top-0 left-1/4 w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '2s' }}></div>
-              <div className="absolute top-0 right-1/4 w-3 h-3 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '2s' }}></div>
-              <div className="absolute top-0 left-1/2 w-3 h-3 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '2s' }}></div>
-              <div className="absolute top-0 right-1/3 w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.9s', animationDuration: '2s' }}></div>
-              <div className="absolute bottom-0 left-1/3 w-3 h-3 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '1.2s', animationDuration: '2s' }}></div>
-              <div className="absolute bottom-0 right-1/4 w-3 h-3 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '2s' }}></div>
-            </div>
-
-            {/* Close Button */}
-            <button
-              onClick={closeCelebration}
-              className="absolute top-6 right-6 p-2 rounded-full glass-card hover:bg-white/20 dark:hover:bg-gray-800/20 transition-all premium-hover"
-              aria-label="Close"
-            >
-              <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Content */}
-            <div className="relative z-10 text-center">
-              {/* Celebration Icon */}
-              <div className="mb-8 flex justify-center">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-teal-400 to-green-400 rounded-full blur-2xl opacity-50 animate-pulse"></div>
-                  <div className="relative bg-gradient-to-br from-yellow-400 to-teal-500 rounded-full p-8 shadow-2xl">
-                    <svg className="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Message */}
-              <h2 className="luxury-heading text-5xl md:text-6xl text-gray-900 dark:text-gray-50 mb-4 bg-gradient-to-r from-teal-600 via-green-500 to-teal-600 bg-clip-text text-transparent">
-                Congratulations!
-              </h2>
-              
-              <p className="luxury-subheading text-3xl md:text-4xl text-gray-800 dark:text-gray-200 mb-6">
-                Well Done!
-              </p>
-
-              <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 font-medium">
-                You've Reached <span className="font-bold text-teal-600 dark:text-teal-400">Financial Freedom</span>!
-              </p>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                <div className="glass-card rounded-xl p-6">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Target Lifestyle</p>
-                  <p className="luxury-heading text-2xl text-gray-900 dark:text-gray-50">{formatCurrency(targetLifestyle)}</p>
-                </div>
-                <div className="glass-card rounded-xl p-6">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Passive Income</p>
-                  <p className="luxury-heading text-2xl text-teal-600 dark:text-teal-400">{formatCurrency(passiveIncome)}</p>
-                </div>
-              </div>
-
-              {/* Close Button */}
-              <button
-                onClick={closeCelebration}
-                className="px-8 py-4 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-teal-500/30 premium-hover"
-              >
-                Continue Planning
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Input Boxes Stacked */}
+        {/* Left Column: Input Boxes */}
         <div className="space-y-6">
-          {/* Box 1: Target Lifestyle, Target Passive Income, Growth Rate */}
           <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <h2 className="luxury-subheading text-2xl text-gray-800 dark:text-gray-200">Targets & Growth</h2>
@@ -248,76 +181,116 @@ export default function FreedomScorecard() {
                 onClick={handleReset}
                 className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 premium-hover glass-card text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-800/90 border border-gray-300 dark:border-gray-600 hover:border-red-400 dark:hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
                 title="Reset all values to zero"
+                aria-label="Reset all values to zero"
               >
                 Reset All
               </button>
             </div>
             <div className="space-y-4">
+              {/* Field 1: Lifestyle Cost */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                  Target Lifestyle Cost (p.a.)
+                <label 
+                  htmlFor="lifestyle-cost-input"
+                  className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide"
+                >
+                  Lifestyle Cost (P.A.)
                 </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 italic">
+                  How much your ideal life costs per year.
+                </p>
                 <input
-                  ref={targetLifestyleRef}
+                  id="lifestyle-cost-input"
+                  ref={lifestyleCostRef}
                   type="text"
-                  value={formatCurrencyInput(targetLifestyle)}
-                  onChange={(e) => setTargetLifestyle(parseCurrency(e.target.value))}
-                  onKeyDown={(e) => handleKeyDown(e, 'targetLifestyle')}
+                  value={formatCurrencyInput(lifestyleCost)}
+                  onChange={(e) => handleLifestyleCostChange(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, 'lifestyleCost')}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      setLifestyleCost(0)
+                    }
+                  }}
+                  placeholder="$0"
+                  aria-label="Lifestyle Cost per annum"
+                  aria-describedby="lifestyle-cost-helper"
                   className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
                 />
                 <input
                   type="range"
                   min="0"
-                  max={500000}
-                  value={Math.min(targetLifestyle, 500000)}
-                  onChange={(e) => setTargetLifestyle(parseFloat(e.target.value))}
+                  max={SLIDER_MAX_CURRENCY}
+                  value={clampSliderValue(lifestyleCost, SLIDER_MAX_CURRENCY)}
+                  onChange={(e) => setLifestyleCost(parseFloat(e.target.value))}
+                  aria-label="Lifestyle Cost slider"
                   className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
                   style={{
-                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(targetLifestyle, 500000) / 500000) * 100}%, #e5e7eb ${(Math.min(targetLifestyle, 500000) / 500000) * 100}%, #e5e7eb 100%)`
+                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(clampSliderValue(lifestyleCost, SLIDER_MAX_CURRENCY) / SLIDER_MAX_CURRENCY) * 100}%, #e5e7eb ${(clampSliderValue(lifestyleCost, SLIDER_MAX_CURRENCY) / SLIDER_MAX_CURRENCY) * 100}%, #e5e7eb 100%)`
                   }}
                 />
-                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                  {formatCurrency(targetLifestyle)}
+                <div id="lifestyle-cost-helper" className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                  {formatCurrency(lifestyleCost)}
                 </div>
               </div>
 
+              {/* Field 2: Current Passive Income */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                  Target Passive Income (p.a.)
+                <label 
+                  htmlFor="passive-income-input"
+                  className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide"
+                >
+                  Current Passive Income (P.A.)
                 </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 italic">
+                  Money that comes in whether you work or not.
+                </p>
                 <input
-                  ref={passiveIncomeRef}
+                  id="passive-income-input"
+                  ref={currentPassiveIncomeRef}
                   type="text"
-                  value={formatCurrencyInput(passiveIncome)}
-                  onChange={(e) => setPassiveIncome(parseCurrency(e.target.value))}
-                  onKeyDown={(e) => handleKeyDown(e, 'passiveIncome')}
+                  value={formatCurrencyInput(currentPassiveIncome)}
+                  onChange={(e) => handlePassiveIncomeChange(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, 'currentPassiveIncome')}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      setCurrentPassiveIncome(0)
+                    }
+                  }}
+                  placeholder="$0"
+                  aria-label="Current Passive Income per annum"
+                  aria-describedby="passive-income-helper"
                   className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
                 />
                 <input
                   type="range"
                   min="0"
-                  max={500000}
-                  value={Math.min(passiveIncome, 500000)}
-                  onChange={(e) => setPassiveIncome(parseFloat(e.target.value))}
+                  max={SLIDER_MAX_CURRENCY}
+                  value={clampSliderValue(currentPassiveIncome, SLIDER_MAX_CURRENCY)}
+                  onChange={(e) => setCurrentPassiveIncome(parseFloat(e.target.value))}
+                  aria-label="Current Passive Income slider"
                   className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer asset-slider"
                   style={{
-                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(Math.min(passiveIncome, 500000) / 500000) * 100}%, #e5e7eb ${(Math.min(passiveIncome, 500000) / 500000) * 100}%, #e5e7eb 100%)`
+                    background: `linear-gradient(to right, #0d9488 0%, #0d9488 ${(clampSliderValue(currentPassiveIncome, SLIDER_MAX_CURRENCY) / SLIDER_MAX_CURRENCY) * 100}%, #e5e7eb ${(clampSliderValue(currentPassiveIncome, SLIDER_MAX_CURRENCY) / SLIDER_MAX_CURRENCY) * 100}%, #e5e7eb 100%)`
                   }}
                 />
-                <div className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                  {formatCurrency(passiveIncome)}
+                <div id="passive-income-helper" className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                  {formatCurrency(currentPassiveIncome)}
                 </div>
               </div>
 
+              {/* Field 3: Growth Rate */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+                <label 
+                  htmlFor="growth-rate-input"
+                  className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide"
+                >
                   Growth Rate % (P.A.)
                 </label>
                 <input
+                  id="growth-rate-input"
                   ref={growthRateRef}
                   type="text"
                   value={formatPercentageInput(growthRate)}
-                  onChange={(e) => setGrowthRate(parsePercentage(e.target.value))}
+                  onChange={(e) => handleGrowthRateChange(e.target.value)}
                   onKeyDown={(e) => handleKeyDown(e, 'growthRate')}
                   onBlur={(e) => {
                     if (e.target.value === '') {
@@ -325,17 +298,23 @@ export default function FreedomScorecard() {
                     }
                   }}
                   placeholder="0%"
+                  aria-label="Growth Rate percentage per annum"
+                  aria-describedby="growth-rate-helper"
                   className="w-full px-4 py-2.5 text-base font-semibold border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-3 focus:ring-teal-500/50 focus:border-teal-500 transition-all shadow-inner"
                 />
                 <input
                   type="range"
                   min="0"
-                  max="15"
+                  max={SLIDER_MAX_PERCENTAGE}
                   step="0.5"
-                  value={growthRate}
+                  value={clampSliderValue(growthRate, SLIDER_MAX_PERCENTAGE)}
                   onChange={(e) => setGrowthRate(parseFloat(e.target.value))}
+                  aria-label="Growth Rate slider"
                   className="w-full mt-3 h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-slate-600 dark:to-slate-500 rounded-lg appearance-none cursor-pointer accent-teal-600"
                 />
+                <div id="growth-rate-helper" className="mt-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                  {growthRate}%
+                </div>
               </div>
             </div>
           </div>
@@ -344,14 +323,9 @@ export default function FreedomScorecard() {
         {/* Right Column: Projection Section */}
         <div className="glass-card embossed rounded-xl p-6 premium-hover shadow-sm">
           <h2 className="luxury-subheading text-2xl mb-6 text-gray-800 dark:text-gray-200">Projection</h2>
-          <ResponsiveContainer width="100%" height={500}>
-            <AreaChart data={projectionData}>
+          <ResponsiveContainer width="100%" height={500} className="min-h-[300px]">
+            <ComposedChart data={projectionData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <defs>
-                <linearGradient id="colorLifestyle" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#dc2626" stopOpacity={0.5}/>
-                  <stop offset="50%" stopColor="#ef4444" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                </linearGradient>
                 <linearGradient id="colorPassive" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#059669" stopOpacity={0.6}/>
                   <stop offset="50%" stopColor="#10b981" stopOpacity={0.4}/>
@@ -363,15 +337,18 @@ export default function FreedomScorecard() {
                 dataKey="year"
                 stroke={darkMode ? '#94a3b8' : '#64748b'}
                 strokeWidth={2}
-                tick={{ fill: darkMode ? '#e2e8f0' : '#1e293b', fontWeight: 'bold', fontSize: '14px' }}
-                style={{ fontSize: '14px', fontWeight: 'bold' }}
+                tick={{ fill: darkMode ? '#e2e8f0' : '#1e293b', fontWeight: 'bold', fontSize: '12px' }}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                interval={0}
               />
               <YAxis
                 stroke={darkMode ? '#94a3b8' : '#64748b'}
                 strokeWidth={2}
-                tick={{ fill: darkMode ? '#e2e8f0' : '#1e293b', fontWeight: 'bold', fontSize: '14px' }}
+                tick={{ fill: darkMode ? '#e2e8f0' : '#1e293b', fontWeight: 'bold', fontSize: '12px' }}
                 tickFormatter={(value) => `$${value / 1000}k`}
-                style={{ fontSize: '14px', fontWeight: 'bold' }}
+                width={60}
               />
               <Tooltip
                 formatter={(value: number) => formatCurrency(value)}
@@ -379,24 +356,21 @@ export default function FreedomScorecard() {
                   backgroundColor: darkMode ? '#1e293b' : '#fff',
                   border: `3px solid ${darkMode ? '#475569' : '#cbd5e1'}`,
                   borderRadius: '12px',
-                  fontSize: '16px',
+                  fontSize: '14px',
                   fontWeight: 'bold',
                   boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
                 }}
               />
               <Legend 
-                wrapperStyle={{ fontWeight: 'bold', fontSize: '16px', paddingTop: '20px' }}
+                wrapperStyle={{ fontWeight: 'bold', fontSize: '14px', paddingTop: '20px' }}
                 iconType="square"
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="lifestyle"
                 stroke="#dc2626"
                 strokeWidth={5}
-                strokeDasharray="8 4"
-                fillOpacity={1}
-                fill="url(#colorLifestyle)"
-                name="Lifestyle"
+                name="Lifestyle Cost"
                 dot={false}
                 activeDot={{ r: 6, strokeWidth: 2, stroke: '#dc2626' }}
               />
@@ -407,56 +381,60 @@ export default function FreedomScorecard() {
                 strokeWidth={6}
                 fillOpacity={1}
                 fill="url(#colorPassive)"
-                name="Passive"
+                name="Passive Income"
                 dot={false}
                 activeDot={{ r: 7, strokeWidth: 2, stroke: '#059669' }}
               />
-            </AreaChart>
+            </ComposedChart>
           </ResponsiveContainer>
 
-          {/* Only show progress box when there's actual data */}
-          {(targetLifestyle > 0 || passiveIncome > 0 || activeIncome > 0) && (
+          {/* Summary Card */}
+          {hasValidData ? (
             <div className="mt-6 p-6 glass-card embossed rounded-xl border-l-4 border-teal-500 relative overflow-hidden shadow-sm">
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-400/20 to-transparent rounded-full blur-2xl"></div>
               <div className="mb-4 relative z-10">
-                {freedomPercentage >= 100 ? (
+                {lifestyleCost === 0 ? (
+                  <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                    Set a lifestyle cost to calculate your freedom score.
+                  </p>
+                ) : independenceYear ? (
+                  <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                    You've reached <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomPercentage}%</span> of your lifestyle freedom target so far, and at this growth rate your passive income is projected to surpass your lifestyle cost by <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{independenceYear}</span>.
+                  </p>
+                ) : (
                   <div className="space-y-3">
-                    <p className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-50 mb-2 bg-gradient-to-r from-teal-600 via-green-500 to-teal-600 bg-clip-text text-transparent">
-                      🎉 Congratulations! 🎉
+                    <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                      You've reached <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomPercentage}%</span> of your lifestyle freedom target so far.
                     </p>
-                    <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200 leading-relaxed">
-                      You reached <span className="luxury-heading text-3xl md:text-4xl text-teal-700 dark:text-teal-400 font-black">100%</span> lifestyle freedom in{' '}
-                      <span className="luxury-heading text-2xl md:text-3xl text-teal-700 dark:text-teal-400 font-black">{freedomDate}</span>.
-                    </p>
-                    <p className="text-xl md:text-2xl font-bold text-teal-700 dark:text-teal-400 mt-4">
-                      You are now <span className="text-2xl md:text-3xl font-black">financially independent</span>.
-                    </p>
-                    <p className="text-lg md:text-xl font-semibold text-gray-700 dark:text-gray-300 italic">
-                      Work is now optional! ✨
+                    <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                      At this growth rate, financial independence is projected to be beyond the current forecast period. Try increasing your growth rate or lifestyle cost assumptions to see different scenarios.
                     </p>
                   </div>
-                ) : (
-                  <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                    You've reached <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomPercentage}%</span> lifestyle freedom so far, and you're on pace to hit full independence by{' '}
-                    <span className="luxury-heading text-3xl text-teal-700 dark:text-teal-400">{freedomDate}</span>.
-                  </p>
                 )}
               </div>
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 bg-teal-600 rounded-full shadow-lg" />
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Current Progress</span>
+              {lifestyleCost > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 bg-teal-600 rounded-full shadow-lg" />
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Current Progress</span>
+                    </div>
+                    <span className="text-lg font-bold text-teal-600 dark:text-teal-400">{Math.min(100, freedomPercentage)}%</span>
                   </div>
-                  <span className="text-lg font-bold text-teal-600 dark:text-teal-400">{freedomPercentage}%</span>
+                  <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-4 shadow-inner">
+                    <div
+                      className="bg-gradient-to-r from-teal-500 to-teal-600 h-4 rounded-full transition-all duration-500 shadow-lg"
+                      style={{ width: `${Math.min(100, freedomPercentage)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-4 shadow-inner">
-                  <div
-                    className="bg-gradient-to-r from-teal-500 to-teal-600 h-4 rounded-full transition-all duration-500 shadow-lg"
-                    style={{ width: `${Math.min(100, freedomPercentage)}%` }}
-                  />
-                </div>
-              </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-6 p-6 glass-card embossed rounded-xl border-l-4 border-teal-500 relative overflow-hidden shadow-sm">
+              <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                Enter your lifestyle cost and current passive income to see your financial independence projection.
+              </p>
             </div>
           )}
         </div>

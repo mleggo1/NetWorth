@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import NetWorthEngine from '@/components/NetWorthEngine'
 import FreedomScorecard from '@/components/FreedomScorecard'
+import PassiveIncomeTracker from '@/components/PassiveIncomeTracker'
 import PasswordGate from '@/components/PasswordGate'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'networth' | 'freedom'>('networth')
+  const [activeTab, setActiveTab] = useState<'networth' | 'freedom' | 'passive'>('networth')
   const [darkMode, setDarkMode] = useState(false)
 
   useEffect(() => {
